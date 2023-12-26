@@ -8,6 +8,7 @@ try:
 except sqlite3.Error:
     print("Не удалось подключиться к базе данных.")
 
+# is_logged_in - проверка авторизации пользователя. True - вход в аккаунт выполнен.
 is_logged_in = False
 
 
@@ -44,6 +45,11 @@ class Check:
         self.email = email
         self.password = password
 
+    # Требования к паролю Пользователя сформированы на основании на исследовании Hive Systems.
+    # Ссылка на исследование Hive Systems: https://www.hivesystems.io/blog/are-your-passwords-in-the-green.
+
+    # Список распространенных паролей сформирован на основании ежегодного отчёта NordPass.
+    # Ссылка на отчёт NordPass: https://nordpass.com/most-common-passwords-list.
     def check_password(self):
         try:
             if len(self.password) < 12:
@@ -86,6 +92,7 @@ class Check:
         except TooCommonPassword:
             return "Ваш пароль слишком распространён."
 
+    # Корректный адрес электронной почты по следующему шаблону: имя_пользователя@имя_почтового_сервера.
     def check_email(self):
         try:
             regular_string = r"([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+"
@@ -97,6 +104,7 @@ class Check:
         except IncorrectEmailFormat:
             return "Некорректный формат почты."
 
+    # Проверка существования учётной записи осуществляется по адресу электронной почты. 
     def whether_user(self):
         is_email_correct = self.check_email()
         is_password_correct = self.check_password()
@@ -132,6 +140,7 @@ class Check:
 
 
 class User:
+    # Таблица в базе данных содержит следующие колонки: email, password.
     def create_account_or_login(self):
         global is_logged_in
         email = input()

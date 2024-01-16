@@ -6,7 +6,7 @@ pygame.init()
 screen = pygame.display.set_mode((400, 600))
 pygame.display.set_caption('Gunfight')
 
-gunspeed = 20
+gunspeed = 30
 gunx = 200
 playery = -3
 
@@ -29,25 +29,25 @@ win_label=label.render('Вы выиграли!!!',False,'red')
 clock = pygame.time.Clock()
 clock1 = pygame.time.Clock()
 player_timer = pygame.USEREVENT + 1
-pygame.time.set_timer(player_timer, 2000)
+pygame.time.set_timer(player_timer, 1500)
 
 #анимация
 bum=pygame.image.load('пуля.png').convert_alpha()
 bums=[]
-bg = pygame.image.load('фон_трава.jpg').convert_alpha()
+bg = pygame.image.load('фон-снег.jpg').convert_alpha()
 gun = pygame.image.load('пушка1.png').convert_alpha()
 player = [
-    pygame.image.load('солдат1.png').convert_alpha(),
-    pygame.image.load('солдат2.png').convert_alpha(),
-    pygame.image.load('солдат3.png').convert_alpha(),
-    pygame.image.load('солдат4.png').convert_alpha(),
+    pygame.image.load('солдат_снег_1.png').convert_alpha(),
+    pygame.image.load('солдат_снег_2.png').convert_alpha(),
+    pygame.image.load('солдат_снег_3.png').convert_alpha(),
+    pygame.image.load('солдат_снег_4.png').convert_alpha(),
 ]
 player_list=[]
 count_walking = 0
 running = True
 k = 0
 kol=0
-kol_bums=23
+kol_bums=30
 while running:
     #вывод на экран
     wall_rect = pygame.draw.rect(screen, (133, 116, 105), (0, 500, 400, 100), 1)
@@ -56,22 +56,22 @@ while running:
 
     # игровые характеристики
     label = pygame.font.Font('arial.otf', 10)
-    text='lifes:'+str(5-play)+'/'+'5'
+    text='lifes:'+str(3-play)+'/'+'3'
     life_label = label.render(text,False,'black')
     screen.blit(life_label, (340, 10))
-    text = 'bulles:' + str(kol_bums) + '/' + '23'
+    text = 'bulles:' + str(kol_bums) + '/' + '30'
     bums_label = label.render(text, False, 'black')
     screen.blit(bums_label, (323, 20))
-    text = 'kills:' + str(kol) + '/' + '20'
+    text = 'kills:' + str(kol) + '/' + '29'
     kills_label = label.render(text, False, 'black')
     screen.blit(kills_label, (335, 30))
 
-    if play<5 and kol<20:
+    if play<3 and kol<29:
         #автоматический вывод солдат
         if player_list:
             for (i,e) in enumerate(player_list):
                 screen.blit(player[count_walking],e)
-                e.y+=10
+                e.y+=7
                 if wall_rect.colliderect(e):
                     play += 1
                 if e.y>400:
@@ -105,7 +105,7 @@ while running:
                             player_list.pop(ind)
                             bums.pop(i)
 
-    elif play>=5:
+    elif play>=3:
         screen.fill('grey')
         screen.blit(lose_label,(70,200))
         screen.blit(restart_label, restart_label_rect)
@@ -123,18 +123,11 @@ while running:
         if back_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
             None
 
-    elif kol>=20:
+    elif kol>=29:
         screen.fill('grey')
         screen.blit(win_label, (70, 200))
-        screen.blit(restart_label, restart_label_rect)
         screen.blit(back_label,back_label_rect)
-        # перезапуск
         mouse = pygame.mouse.get_pos()
-        if restart_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
-            play = 0
-            gunx = 200
-            player_list.clear()
-            bums.clear()
         # заново
         if back_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
             None
@@ -151,6 +144,3 @@ while running:
             bums.append(bum.get_rect(topleft=(gunx,460)))
             kol_bums-=1
     clock.tick(10)
-
-
-##не работает кнопка перезапуска при выигрыше

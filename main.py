@@ -17,7 +17,7 @@ except sqlite3.Error:
 pygame.init()
 
 pygame.mixer.init()
-pygame.mixer.music.load('9925bd28798144c.mp3')
+pygame.mixer.music.load('фон.mp3')
 pygame.mixer.music.play()
 
 BACKGROUND = (255, 255, 255)
@@ -41,14 +41,10 @@ result = bool()
 def whether_user(email, password):
     global right_password
     with con:
-        all_emails = cur.execute(
-            "SELECT email FROM Users"
-        ).fetchall()
+        all_emails = cur.execute("SELECT email FROM Users").fetchall()
         if (email,) in all_emails:
             request = "SELECT password FROM users WHERE email = ?"
-            original_password = cur.execute(
-                request, (email,)
-            ).fetchall()
+            original_password = cur.execute(request, (email,)).fetchall()
             if original_password[0][0] == password:
                 right_password = True
                 return True
@@ -69,8 +65,8 @@ def create_account_or_login(email, password):
         is_logged_in = False
     elif not check_result:
         with con:
-            sql = "INSERT INTO Users (email, password, results, money) values(?, ?, ?, ?)"
-            data = [(email, password, "0 0", 0)]
+            sql = "INSERT INTO Users (email, password, results, money, new_gun) values(?, ?, ?, ?, ?)"
+            data = [(email, password, "0 0", 0, 0)]
             con.executemany(sql, data)
         is_logged_in = True
     return is_logged_in
@@ -79,9 +75,7 @@ def create_account_or_login(email, password):
 def add_money():
     with con:
         request = "SELECT money FROM Users WHERE email = ?"
-        money = cur.execute(
-            request, (current_email,)
-        ).fetchall()[0][0]
+        money = cur.execute(request, (current_email,)).fetchall()[0][0]
         request = (
             "UPDATE users SET money = ? WHERE email = ?"
         )
@@ -93,9 +87,7 @@ def add_results_to_database():
     global result
     with con:
         request = "SELECT results FROM Users WHERE email = ?"
-        results = cur.execute(
-            request, (current_email,)
-        ).fetchall()
+        results = cur.execute(request, (current_email,)).fetchall()
         results = results[0][0].split()
         request = (
             "UPDATE users SET results = ? WHERE email = ?"
@@ -228,6 +220,9 @@ def open_personal_account():
                                     "main_menu_button.jpeg",
                                     "main_menu_hovered_button.jpeg")
 
+    request = "SELECT results FROM Users WHERE email = ?"
+    results = cur.execute(request, (current_email,)).fetchall()[0][0].split()
+
     running = True
     while running:
         WINDOW.fill(BACKGROUND)
@@ -237,6 +232,16 @@ def open_personal_account():
         text_surface = font.render("ЛИЧНЫЙ КАБИНЕТ", True, (255, 255, 255))
         text_rect = text_surface.get_rect(center=(200, 100))
         WINDOW.blit(text_surface, text_rect)
+
+        font1 = pygame.font.Font(None, 50)
+        text_surface1 = font1.render(f"Победы: {results[0]}", True, BACKGROUND)
+        text_rect1 = text_surface1.get_rect(center=(200, 300))
+        WINDOW.blit(text_surface1, text_rect1)
+
+        font1 = pygame.font.Font(None, 50)
+        text_surface1 = font1.render(f"Поражения: {results[1]}", True, BACKGROUND)
+        text_rect1 = text_surface1.get_rect(center=(200, 350))
+        WINDOW.blit(text_surface1, text_rect1)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -289,13 +294,13 @@ def open_level_selection():
                 pygame.quit()
                 sys.exit()
 
-            if event.type == pygame.USEREVENT and event.button == level2_button:
+            if event.type == pygame.USEREVENT and event.button == level1_button:
                 if load_main_levels:
                     open_grass_level1()
                 else:
                     open_snow_level1()
 
-            if event.type == pygame.USEREVENT and event.button == level1_button:
+            if event.type == pygame.USEREVENT and event.button == level2_button:
                 if load_main_levels:
                     open_grass_level2()
                 else:
@@ -324,9 +329,9 @@ def open_market():
     global is_logged_in, new_gun
     with con:
         request = "SELECT money FROM Users WHERE email = ?"
-        money = cur.execute(
-            request, (current_email,)
-        ).fetchall()[0][0]
+        money = cur.execute(request, (current_email,)).fetchall()[0][0]
+        request = "SELECT new_gun FROM Users WHERE email = ?"
+        has_new_gun = cur.execute(request, (current_email,)).fetchall()[0][0]
 
     main_menu_background = pygame.image.load("main_menu_background.jpeg")
 
@@ -366,11 +371,12 @@ def open_market():
             if event.type == pygame.USEREVENT and event.button == gun_button:
                 if money >= 10:
                     if not new_gun:
-                        request = (
-                            "UPDATE users SET money = ? WHERE email = ?"
-                        )
-                        data = [(int(money) - 10, current_email)]
-                        con.executemany(request, data)
+                        if int(has_new_gun) == 0:
+                            request = (
+                                "UPDATE users SET money = ?, new_gun = ? WHERE email = ?"
+                            )
+                            data = [(int(money) - 10, 1, current_email)]
+                            con.executemany(request, data)
                     if new_gun:
                         new_gun = False
                     else:
@@ -419,6 +425,8 @@ def open_grass_level1():
     bums = []
     bg = pygame.image.load('фон_трава.jpg').convert_alpha()
     gun = pygame.image.load('пушка1.png').convert_alpha()
+    if new_gun:
+        gun = pygame.image.load('пушка2.png').convert_alpha()
     player = [
         pygame.image.load('солдат1.png').convert_alpha(),
         pygame.image.load('солдат2.png').convert_alpha(),

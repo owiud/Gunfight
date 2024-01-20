@@ -34,7 +34,6 @@ load_main_levels = False
 current_email = ""
 # is_logged_in - проверка авторизации пользователя. True - вход в аккаунт выполнен.
 is_logged_in = False
-result = bool()
 
 
 # Проверка существования учётной записи осуществляется по адресу электронной почты.
@@ -83,8 +82,8 @@ def add_money():
         con.executemany(request, data)
 
 
-def add_results_to_database():
-    global result
+def add_results_to_database(result):
+    print(f"88 RESULT: {result}")
     with con:
         request = "SELECT results FROM Users WHERE email = ?"
         results = cur.execute(request, (current_email,)).fetchall()
@@ -142,6 +141,7 @@ def open_main_menu():
                 open_level_selection()
 
             if event.type == pygame.USEREVENT and event.button == extra_levels_button:
+                load_main_levels = False
                 open_level_selection()
 
             if event.type == pygame.USEREVENT and event.button == market_button:
@@ -328,10 +328,11 @@ def open_level_selection():
 def open_market():
     global is_logged_in, new_gun
     with con:
-        request = "SELECT money FROM Users WHERE email = ?"
-        money = cur.execute(request, (current_email,)).fetchall()[0][0]
-        request = "SELECT new_gun FROM Users WHERE email = ?"
-        has_new_gun = cur.execute(request, (current_email,)).fetchall()[0][0]
+        if is_logged_in:
+            request = "SELECT money FROM Users WHERE email = ?"
+            money = cur.execute(request, (current_email,)).fetchall()[0][0]
+            request = "SELECT new_gun FROM Users WHERE email = ?"
+            has_new_gun = cur.execute(request, (current_email,)).fetchall()[0][0]
 
     main_menu_background = pygame.image.load("main_menu_background.jpeg")
 
@@ -369,18 +370,19 @@ def open_market():
                 open_main_menu()
 
             if event.type == pygame.USEREVENT and event.button == gun_button:
-                if money >= 10:
-                    if not new_gun:
-                        if int(has_new_gun) == 0:
-                            request = (
-                                "UPDATE users SET money = ?, new_gun = ? WHERE email = ?"
-                            )
-                            data = [(int(money) - 10, 1, current_email)]
-                            con.executemany(request, data)
-                    if new_gun:
-                        new_gun = False
-                    else:
-                        new_gun = True
+                if is_logged_in:
+                    if money >= 10:
+                        if not new_gun:
+                            if int(has_new_gun) == 0:
+                                request = (
+                                    "UPDATE users SET money = ?, new_gun = ? WHERE email = ?"
+                                )
+                                data = [(int(money) - 10, 1, current_email)]
+                                con.executemany(request, data)
+                        if new_gun:
+                            new_gun = False
+                        else:
+                            new_gun = True
 
             for button in [back_button, gun_button]:
                 button.handle_event(event)
@@ -393,7 +395,6 @@ def open_market():
 
 
 def open_grass_level1():
-    global result
     gunspeed = 20
     gunx = 200
     playery = -3
@@ -497,10 +498,16 @@ def open_grass_level1():
 
         elif play >= 5:
             result = False
+            print(f"503 RESULT: {result}")
             WINDOW.fill('grey')
             WINDOW.blit(lose_label, (70, 200))
             WINDOW.blit(restart_label, restart_label_rect)
             WINDOW.blit(back_label, back_label_rect)
+
+            counter += 1
+            if counter <= 1:
+                if is_logged_in:
+                    add_results_to_database(result)
 
             # перезапуск
             mouse = pygame.mouse.get_pos()
@@ -513,15 +520,19 @@ def open_grass_level1():
 
         elif kol >= 20:
             result = True
+            print(f"520 RESULT: {result}")
             WINDOW.fill('grey')
             WINDOW.blit(win_label, (70, 200))
-            WINDOW.blit(restart_label, restart_label_rect)
             WINDOW.blit(back_label, back_label_rect)
 
-            # перезапуск
+            counter += 1
+            if counter <= 1:
+                if is_logged_in:
+                    add_results_to_database(result)
+                    if result:
+                        add_money()
+
             mouse = pygame.mouse.get_pos()
-            if restart_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
-                open_grass_level1()
 
             # заново
             if back_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
@@ -533,6 +544,9 @@ def open_grass_level1():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
             if event.type == player_timer:
                 player_list.append(player[0].get_rect(topleft=(random.randint(10, 350), -70)))
             if play < 5 and event.type == pygame.KEYUP and event.key == pygame.K_SPACE and kol_bums > 0:
@@ -540,16 +554,9 @@ def open_grass_level1():
                 kol_bums -= 1
 
         clock.tick(10)
-        counter += 1
-        if counter <= 1:
-            add_results_to_database()
-            if result:
-                add_money()
 
 
 def open_grass_level2():
-    global result
-
     gunspeed = 30
     gunx = 200
     playery = -3
@@ -656,6 +663,11 @@ def open_grass_level2():
             WINDOW.blit(restart_label, restart_label_rect)
             WINDOW.blit(back_label, back_label_rect)
 
+            counter += 1
+            if counter <= 1:
+                if is_logged_in:
+                    add_results_to_database(result)
+
             # перезапуск
             mouse = pygame.mouse.get_pos()
             if restart_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
@@ -669,13 +681,16 @@ def open_grass_level2():
             result = True
             WINDOW.fill('grey')
             WINDOW.blit(win_label, (70, 200))
-            WINDOW.blit(restart_label, restart_label_rect)
             WINDOW.blit(back_label, back_label_rect)
 
-            # перезапуск
+            counter += 1
+            if counter <= 1:
+                if is_logged_in:
+                    add_results_to_database(result)
+                    if result:
+                        add_money()
+
             mouse = pygame.mouse.get_pos()
-            if restart_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
-                open_grass_level2()
 
             # заново
             if back_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
@@ -687,6 +702,9 @@ def open_grass_level2():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
             if event.type == player_timer:
                 player_list.append(player[0].get_rect(topleft=(random.randint(10, 350), -70)))
             if play < 5 and event.type == pygame.KEYUP and event.key == pygame.K_SPACE and kol_bums > 0:
@@ -694,15 +712,8 @@ def open_grass_level2():
                 kol_bums -= 1
         clock.tick(10)
 
-        counter += 1
-        if counter <= 1:
-            add_results_to_database()
-            if result:
-                add_money()
-
 
 def open_grass_level3():
-    global result
     gunspeed = 30
     gunx = 200
     playery = -3
@@ -809,6 +820,11 @@ def open_grass_level3():
             WINDOW.blit(restart_label, restart_label_rect)
             WINDOW.blit(back_label, back_label_rect)
 
+            counter += 1
+            if counter <= 1:
+                if is_logged_in:
+                    add_results_to_database(result)
+
             # перезапуск
             mouse = pygame.mouse.get_pos()
             if restart_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
@@ -822,13 +838,16 @@ def open_grass_level3():
             result = True
             WINDOW.fill('grey')
             WINDOW.blit(win_label, (70, 200))
-            WINDOW.blit(restart_label, restart_label_rect)
             WINDOW.blit(back_label, back_label_rect)
 
-            # перезапуск
+            counter += 1
+            if counter <= 1:
+                if is_logged_in:
+                    add_results_to_database(result)
+                    if result:
+                        add_money()
+
             mouse = pygame.mouse.get_pos()
-            if restart_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
-                open_grass_level3()
 
             # заново
             if back_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
@@ -840,6 +859,9 @@ def open_grass_level3():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
             if event.type == player_timer:
                 player_list.append(player[0].get_rect(topleft=(random.randint(10, 350), -70)))
             if play < 5 and event.type == pygame.KEYUP and event.key == pygame.K_SPACE and kol_bums > 0:
@@ -847,15 +869,8 @@ def open_grass_level3():
                 kol_bums -= 1
         clock.tick(10)
 
-        counter += 1
-        if counter <= 1:
-            add_results_to_database()
-            if result:
-                add_money()
-
 
 def open_snow_level1():
-    global result
     gunspeed = 20
     gunx = 200
     playery = -3
@@ -961,6 +976,11 @@ def open_snow_level1():
             WINDOW.blit(restart_label, restart_label_rect)
             WINDOW.blit(back_label, back_label_rect)
 
+            counter += 1
+            if counter <= 1:
+                if is_logged_in:
+                    add_results_to_database(result)
+
             # перезапуск
             mouse = pygame.mouse.get_pos()
             if restart_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
@@ -974,13 +994,16 @@ def open_snow_level1():
             result = True
             WINDOW.fill('grey')
             WINDOW.blit(win_label, (70, 200))
-            WINDOW.blit(restart_label, restart_label_rect)
             WINDOW.blit(back_label, back_label_rect)
 
-            # перезапуск
+            counter += 1
+            if counter <= 1:
+                if is_logged_in:
+                    add_results_to_database(result)
+                    if result:
+                        add_money()
+
             mouse = pygame.mouse.get_pos()
-            if restart_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
-                open_snow_level1()
 
             # заново
             if back_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
@@ -992,6 +1015,9 @@ def open_snow_level1():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
             if event.type == player_timer:
                 player_list.append(player[0].get_rect(topleft=(random.randint(10, 350), -70)))
             if play < 5 and event.type == pygame.KEYUP and event.key == pygame.K_SPACE and kol_bums > 0:
@@ -999,15 +1025,8 @@ def open_snow_level1():
                 kol_bums -= 1
         clock.tick(10)
 
-        counter += 1
-        if counter <= 1:
-            add_results_to_database()
-            if result:
-                add_money()
-
 
 def open_snow_level2():
-    global result
     gunspeed = 30
     gunx = 200
     playery = -3
@@ -1114,6 +1133,11 @@ def open_snow_level2():
             WINDOW.blit(restart_label, restart_label_rect)
             WINDOW.blit(back_label, back_label_rect)
 
+            counter += 1
+            if counter <= 1:
+                if is_logged_in:
+                    add_results_to_database(result)
+
             # перезапуск
             mouse = pygame.mouse.get_pos()
             if restart_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
@@ -1129,10 +1153,14 @@ def open_snow_level2():
             WINDOW.blit(win_label, (70, 200))
             WINDOW.blit(back_label, back_label_rect)
 
-            # перезапуск
+            counter += 1
+            if counter <= 1:
+                if is_logged_in:
+                    add_results_to_database(result)
+                    if result:
+                        add_money()
+
             mouse = pygame.mouse.get_pos()
-            if restart_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
-                open_snow_level2()
 
             # заново
             if back_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
@@ -1144,6 +1172,9 @@ def open_snow_level2():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
             if event.type == player_timer:
                 player_list.append(player[0].get_rect(topleft=(random.randint(10, 350), -70)))
             if play < 5 and event.type == pygame.KEYUP and event.key == pygame.K_SPACE and kol_bums > 0:
@@ -1151,15 +1182,8 @@ def open_snow_level2():
                 kol_bums -= 1
         clock.tick(10)
 
-        counter += 1
-        if counter <= 1:
-            add_results_to_database()
-            if result:
-                add_money()
-
 
 def open_snow_level3():
-    global result
     gunspeed = 30
     gunx = 200
     playery = -3
@@ -1266,6 +1290,11 @@ def open_snow_level3():
             WINDOW.blit(restart_label, restart_label_rect)
             WINDOW.blit(back_label, back_label_rect)
 
+            counter += 1
+            if counter <= 1:
+                if is_logged_in:
+                    add_results_to_database(result)
+
             # перезапуск
             mouse = pygame.mouse.get_pos()
             if restart_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
@@ -1281,10 +1310,14 @@ def open_snow_level3():
             WINDOW.blit(win_label, (70, 200))
             WINDOW.blit(back_label, back_label_rect)
 
-            # перезапуск
+            counter += 1
+            if counter <= 1:
+                if is_logged_in:
+                    add_results_to_database(result)
+                    if result:
+                        add_money()
+
             mouse = pygame.mouse.get_pos()
-            if restart_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
-                open_snow_level3()
 
             # заново
             if back_label_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
@@ -1296,18 +1329,15 @@ def open_snow_level3():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
             if event.type == player_timer:
                 player_list.append(player[0].get_rect(topleft=(random.randint(10, 350), -70)))
             if play < 5 and event.type == pygame.KEYUP and event.key == pygame.K_SPACE and kol_bums > 0:
                 bums.append(bum.get_rect(topleft=(gunx, 460)))
                 kol_bums -= 1
         clock.tick(10)
-
-        counter += 1
-        if counter <= 1:
-            add_results_to_database()
-            if result:
-                add_money()
 
 
 if __name__ == '__main__':
